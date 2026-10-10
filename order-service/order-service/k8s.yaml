@@ -17,10 +17,16 @@ spec:
     spec:
       containers:
         - name: order-service
-          image: order-service:v4
+          image: order-service:v5
           imagePullPolicy: Never
           ports:
             - containerPort: 8082
+          env:
+            - name: KAFKA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: kafka-password
 ---
 apiVersion: v1
 kind: Service
@@ -54,10 +60,21 @@ spec:
     spec:
       containers:
         - name: inventory-service
-          image: inventory-service:v2
+          image: inventory-service:v5
           imagePullPolicy: Never
           ports:
             - containerPort: 8083
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: db-password
+            - name: KAFKA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: kafka-password
 ---
 apiVersion: v1
 kind: Service
