@@ -1,0 +1,109 @@
+# ==========================================
+# Order Service Deployment & Service
+# ==========================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: order-service
+  template:
+    metadata:
+      labels:
+        app: order-service
+    spec:
+      containers:
+        - name: order-service
+          image: order-service:v4
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8082
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service-svc
+spec:
+  type: ClusterIP # इसे क्लस्टर के अंदर ही रखें
+  ports:
+    - port: 8082
+      targetPort: 8082
+  selector:
+    app: order-service
+
+# ==========================================
+# Inventory Service Deployment
+# ==========================================
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory-service-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: inventory-service
+  template:
+    metadata:
+      labels:
+        app: inventory-service
+    spec:
+      containers:
+        - name: inventory-service
+          image: inventory-service:v2
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8083
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventory-service-svc
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8083
+      targetPort: 8083
+  selector:
+    app: inventory-service
+
+
+# ==========================================
+# Traefik Rate Limiting Middleware
+# ==========================================
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: api-rate-limit
+spec:
+  rateLimit:
+    average: 2      # 1 second mein average 2 requests allow karega
+    burst: 5        # Ek sath maximum 5 requests allow karega (usse zyada aayi toh block kar dega)
+
+# ==========================================
+# Ingress (API Gateway) with Rate Limiting
+# ==========================================
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: microservices-ingress
+  annotations:
+    # Ye annotation Ingress ko batata hai ki upar banaya gaya middleware use karna hai
+    traefik.ingress.kubernetes.io/router.middlewares: default-api-rate-limit@kubernetescrd
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: order-service-svc
+                port:
+                  number: 8082
