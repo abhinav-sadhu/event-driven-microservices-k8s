@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: order-service
-          image: order-service:v5
+          image: order-service:v7
           imagePullPolicy: Never
           ports:
             - containerPort: 8082
@@ -60,7 +60,7 @@ spec:
     spec:
       containers:
         - name: inventory-service
-          image: inventory-service:v5
+          image: inventory-service:v7
           imagePullPolicy: Never
           ports:
             - containerPort: 8083
